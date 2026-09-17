@@ -1,0 +1,5 @@
+
+.top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.secondary-button.active { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+.small-button.favorite { background: #fff7ed; color: #c2410c; }
+.small-button.favorite.saved { background: #ffe4e6; color: #be123c; }
