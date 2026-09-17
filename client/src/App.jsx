@@ -1,145 +1,33 @@
 import { useEffect, useState } from 'react';
 
-const emptyRecipe = {
-  name: '', description: '', ingredients: '', instructions: '', cuisine: '',
-  category: 'Dinner', mealType: 'dinner', dietaryTags: '', imageUrl: '',
-  prepTime: 15, cookTime: 20, servings: 2
-};
-
+const blank = { name: '', description: '', ingredients: '', instructions: '', cuisine: '', category: 'Dinner', mealType: 'dinner', dietaryTags: '', imageUrl: '', prepTime: 15, cookTime: 20, servings: 2 };
+const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb90b62d6?auto=format&fit=crop&w=900&q=80';
+const cuisines = ['Indian', 'Italian', 'Mexican', 'Asian', 'Mediterranean', 'American', 'Greek', 'French', 'Thai', 'Japanese'];
 const userId = localStorage.getItem('recipe-user-id') || crypto.randomUUID();
 localStorage.setItem('recipe-user-id', userId);
-const defaultImage = 'https://images.unsplash.com/photo-1495521821757-a1efb90b62d6?auto=format&fit=crop&w=900&q=80';
 
 function App() {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedCuisine, setSelectedCuisine] = useState('');
-  const [selectedMealType, setSelectedMealType] = useState('');
-  const [selectedDietary, setSelectedDietary] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [filters, setFilters] = useState({ cuisines: [], mealTypes: [], dietaryTags: [], categories: [] });
-  const [favoriteIds, setFavoriteIds] = useState([]);
-  const [form, setForm] = useState(emptyRecipe);
-  const [editingId, setEditingId] = useState(null);
-  const [showFavorites, setShowFavorites] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-
+  const [recipes, setRecipes] = useState([]); const [filters, setFilters] = useState({ cuisines: [], categories: [], mealTypes: [], dietaryTags: [] });
+  const [search, setSearch] = useState(''); const [cuisine, setCuisine] = useState(''); const [category, setCategory] = useState(''); const [mealType, setMealType] = useState(''); const [dietary, setDietary] = useState('');
+  const [favorites, setFavorites] = useState([]); const [selected, setSelected] = useState(null); const [form, setForm] = useState(blank); const [editing, setEditing] = useState(null); const [loading, setLoading] = useState(true); const [onlyFavorites, setOnlyFavorites] = useState(false);
   const headers = { 'x-user-id': userId };
-
-  const fetchRecipes = async () => {
-    setLoading(true);
-    try {
-      const query = new URLSearchParams({ search, cuisine: selectedCuisine, mealType: selectedMealType, dietary: selectedDietary, category: selectedCategory });
-      const response = await fetch(`/api/recipes?${query}`);
-      const data = await response.json();
-      setRecipes(data.items || []);
-    } catch (error) {
-      console.error('Could not load recipes', error);
-      setRecipes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFilters = async () => {
-    const response = await fetch('/api/filters');
-    if (response.ok) setFilters(await response.json());
-  };
-
-  const fetchFavorites = async () => {
-    const response = await fetch('/api/favorites', { headers });
-    if (response.ok) setFavoriteIds((await response.json()).ids || []);
-  };
-
-  useEffect(() => { fetchRecipes(); }, [search, selectedCuisine, selectedMealType, selectedDietary, selectedCategory]);
-  useEffect(() => { fetchFilters(); fetchFavorites(); }, []);
-
-  const visibleRecipes = showFavorites ? recipes.filter((recipe) => favoriteIds.includes(Number(recipe.id))) : recipes;
-
-  const googleSearch = (recipe) => {
-    const query = encodeURIComponent(`${recipe.name} recipe ${recipe.cuisine || ''}`.trim());
-    window.open(`https://www.google.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const toggleFavorite = async (id) => {
-    const response = await fetch(`/api/favorites/${id}/toggle`, { method: 'POST', headers });
-    if (!response.ok) return;
-    const data = await response.json();
-    setFavoriteIds((ids) => data.isFavorite ? [...new Set([...ids, Number(id)])] : ids.filter((value) => value !== Number(id)));
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const payload = {
-      ...form,
-      ingredients: form.ingredients.split(',').map((item) => item.trim()).filter(Boolean),
-      instructions: form.instructions.split('\n').map((item) => item.trim()).filter(Boolean),
-      dietaryTags: form.dietaryTags.split(',').map((item) => item.trim()).filter(Boolean),
-      imageUrl: form.imageUrl || defaultImage
-    };
-    const response = await fetch(`/api/recipes${editingId ? `/${editingId}` : ''}`, {
-      method: editingId ? 'PUT' : 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (response.ok) {
-      setForm(emptyRecipe); setEditingId(null); await fetchRecipes(); await fetchFilters();
-    }
-  };
-
-  const handleEdit = (recipe) => {
-    setSelectedRecipe(null);
-    setEditingId(recipe.id);
-    setForm({ ...recipe, ingredients: recipe.ingredients.join(', '), instructions: recipe.instructions.join('\n'), dietaryTags: (recipe.dietaryTags || []).join(', ') });
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this recipe?')) return;
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE', headers });
-    setSelectedRecipe(null); await fetchRecipes(); await fetchFavorites();
-  };
-
-  const resetFilters = () => { setSearch(''); setSelectedCuisine(''); setSelectedMealType(''); setSelectedDietary(''); setSelectedCategory(''); };
-
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div><p className="eyebrow">Healthy & tasty</p><h1>Recipe Finder</h1><p className="subtitle">Search, discover, and cook something great.</p></div>
-        <div className="top-actions">
-          <button className={`secondary-button ${showFavorites ? 'active' : ''}`} onClick={() => setShowFavorites(!showFavorites)}>♥ Favorites ({favoriteIds.length})</button>
-          <button className="primary-button" onClick={() => { setEditingId(null); setForm(emptyRecipe); }}>＋ New Recipe</button>
-        </div>
-      </header>
-
-      <section className="controls panel">
-        <div className="search-box"><label htmlFor="search">Find a recipe</label><div className="search-row"><input id="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try chicken, pasta, curry..." /><button className="google-button" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${search} recipe`)}`, '_blank', 'noopener,noreferrer')} disabled={!search.trim()}>Search Google</button></div></div>
-        <div className="filters-grid">
-          <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}><option value="">Category</option>{filters.categories.map((item) => <option key={item}>{item}</option>)}</select>
-          <select value={selectedCuisine} onChange={(event) => setSelectedCuisine(event.target.value)}><option value="">Cuisine</option>{filters.cuisines.map((item) => <option key={item}>{item}</option>)}</select>
-          <select value={selectedMealType} onChange={(event) => setSelectedMealType(event.target.value)}><option value="">Meal type</option>{filters.mealTypes.map((item) => <option key={item}>{item}</option>)}</select>
-          <select value={selectedDietary} onChange={(event) => setSelectedDietary(event.target.value)}><option value="">Dietary</option>{filters.dietaryTags.map((item) => <option key={item}>{item}</option>)}</select>
-          <button className="secondary-button" onClick={resetFilters}>Reset</button>
-        </div>
-      </section>
-
-      <main className="content-grid">
-        <section className="recipes-panel">
-          <div className="section-head"><div><h2>{showFavorites ? 'Favorite Recipes' : 'Recipes'}</h2><p className="hint">Click any recipe card to see full ingredients and instructions.</p></div><span>{visibleRecipes.length} found</span></div>
-          {loading ? <p>Loading recipes...</p> : visibleRecipes.length === 0 ? <p className="empty-state">{showFavorites ? 'No favorites yet.' : 'No recipes match your search.'}</p> : <div className="recipe-grid">
-            {visibleRecipes.map((recipe) => <article key={recipe.id} className="recipe-card" onClick={() => setSelectedRecipe(recipe)} tabIndex="0" onKeyDown={(event) => { if (event.key === 'Enter') setSelectedRecipe(recipe); }}>
-              <img src={recipe.imageUrl || defaultImage} alt={recipe.name} /><div className="recipe-body"><div className="chip-row"><span className="chip">{recipe.category}</span><span className="chip">{recipe.cuisine}</span><span className="chip">{recipe.mealType}</span></div><h3>{recipe.name}</h3><p>{recipe.description}</p><p className="card-meta">⏱ {Number(recipe.prepTime || 0) + Number(recipe.cookTime || 0)} min · 👥 {recipe.servings || 2} servings</p><button className="view-link" onClick={(event) => { event.stopPropagation(); setSelectedRecipe(recipe); }}>View recipe →</button><div className="recipe-actions"><button className={`small-button favorite ${favoriteIds.includes(Number(recipe.id)) ? 'saved' : ''}`} onClick={(event) => { event.stopPropagation(); toggleFavorite(recipe.id); }}>{favoriteIds.includes(Number(recipe.id)) ? '♥ Saved' : '♡ Save'}</button><button className="small-button" onClick={(event) => { event.stopPropagation(); handleEdit(recipe); }}>Edit</button><button className="small-button danger" onClick={(event) => { event.stopPropagation(); handleDelete(recipe.id); }}>Delete</button></div></div>
-            </article>)}
-          </div>}
-        </section>
-
-        <aside className="form-panel panel"><h2>{editingId ? 'Edit recipe' : 'Add a recipe'}</h2><form onSubmit={handleSubmit} className="recipe-form"><label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label><label>Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows="3" /></label><label>Ingredients (comma separated)<textarea value={form.ingredients} onChange={(event) => setForm({ ...form, ingredients: event.target.value })} rows="3" required /></label><label>Instructions (one step per line)<textarea value={form.instructions} onChange={(event) => setForm({ ...form, instructions: event.target.value })} rows="4" required /></label><div className="two-column"><label>Category<select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Other'].map((item) => <option key={item}>{item}</option>)}</select></label><label>Cuisine<input value={form.cuisine} onChange={(event) => setForm({ ...form, cuisine: event.target.value })} /></label></div><div className="two-column"><label>Meal Type<select value={form.mealType} onChange={(event) => setForm({ ...form, mealType: event.target.value })}><option>breakfast</option><option>lunch</option><option>dinner</option><option>dessert</option></select></label><label>Dietary Tags<input value={form.dietaryTags} onChange={(event) => setForm({ ...form, dietaryTags: event.target.value })} /></label></div><div className="two-column"><label>Prep Time<input type="number" min="0" value={form.prepTime} onChange={(event) => setForm({ ...form, prepTime: Number(event.target.value) })} /></label><label>Cook Time<input type="number" min="0" value={form.cookTime} onChange={(event) => setForm({ ...form, cookTime: Number(event.target.value) })} /></label></div><label>Image URL<input value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} /></label><div className="form-actions"><button className="primary-button">{editingId ? 'Save Changes' : 'Add Recipe'}</button>{editingId && <button type="button" className="secondary-button" onClick={() => { setEditingId(null); setForm(emptyRecipe); }}>Cancel</button>}</div></form></aside>
-      </main>
-
-      {selectedRecipe && <div className="modal-backdrop" role="presentation" onClick={() => setSelectedRecipe(null)}><article className="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="recipe-title" onClick={(event) => event.stopPropagation()}><button className="close-button" onClick={() => setSelectedRecipe(null)} aria-label="Close">×</button><img className="modal-image" src={selectedRecipe.imageUrl || defaultImage} alt={selectedRecipe.name} /><div className="modal-content"><div className="chip-row"><span className="chip">{selectedRecipe.category}</span><span className="chip">{selectedRecipe.cuisine}</span></div><h2 id="recipe-title">{selectedRecipe.name}</h2><p>{selectedRecipe.description}</p><div className="recipe-stats"><span>Prep: {selectedRecipe.prepTime || 0} min</span><span>Cook: {selectedRecipe.cookTime || 0} min</span><span>Serves: {selectedRecipe.servings || 2}</span></div><h3>Ingredients</h3><ul className="detail-list">{selectedRecipe.ingredients.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul><h3>Instructions</h3><ol className="instructions-list">{selectedRecipe.instructions.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ol><div className="modal-actions"><button className="google-button" onClick={() => googleSearch(selectedRecipe)}>Find similar recipes on Google</button><button className={`small-button favorite ${favoriteIds.includes(Number(selectedRecipe.id)) ? 'saved' : ''}`} onClick={() => toggleFavorite(selectedRecipe.id)}>{favoriteIds.includes(Number(selectedRecipe.id)) ? '♥ Saved' : '♡ Save favorite'}</button></div></div></article></div>}
-    </div>
-  );
+  const load = async () => { setLoading(true); try { const query = new URLSearchParams({ search, cuisine, category, mealType, dietary }); const result = await fetch(`/api/recipes?${query}`); const data = await result.json(); setRecipes(data.items || []); } finally { setLoading(false); } };
+  const loadFavorites = async () => { const result = await fetch('/api/favorites', { headers }); if (result.ok) setFavorites((await result.json()).ids || []); };
+  useEffect(() => { load(); }, [search, cuisine, category, mealType, dietary]);
+  useEffect(() => { fetch('/api/filters').then((r) => r.json()).then(setFilters); loadFavorites(); }, []);
+  const visible = onlyFavorites ? recipes.filter((recipe) => favorites.includes(Number(recipe.id))) : recipes;
+  const google = (term) => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${term} recipe`)}`, '_blank', 'noopener,noreferrer');
+  const toggleFavorite = async (id) => { const result = await fetch(`/api/favorites/${id}/toggle`, { method: 'POST', headers }); if (!result.ok) return; const data = await result.json(); setFavorites((items) => data.isFavorite ? [...new Set([...items, Number(id)])] : items.filter((item) => item !== Number(id))); };
+  const reset = () => { setSearch(''); setCuisine(''); setCategory(''); setMealType(''); setDietary(''); };
+  const submit = async (event) => { event.preventDefault(); const payload = { ...form, ingredients: form.ingredients.split(',').map((x) => x.trim()).filter(Boolean), instructions: form.instructions.split('\n').map((x) => x.trim()).filter(Boolean), dietaryTags: form.dietaryTags.split(',').map((x) => x.trim()).filter(Boolean), imageUrl: form.imageUrl || fallbackImage }; const result = await fetch(`/api/recipes${editing ? `/${editing}` : ''}`, { method: editing ? 'PUT' : 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (result.ok) { setForm(blank); setEditing(null); load(); } };
+  const edit = (recipe) => { setSelected(null); setEditing(recipe.id); setForm({ ...recipe, ingredients: recipe.ingredients.join(', '), instructions: recipe.instructions.join('\n'), dietaryTags: (recipe.dietaryTags || []).join(', ') }); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
+  const remove = async (id) => { if (confirm('Delete this recipe?')) { await fetch(`/api/recipes/${id}`, { method: 'DELETE', headers }); setSelected(null); load(); loadFavorites(); } };
+  return <div className="app-shell">
+    <header className="topbar"><div><p className="eyebrow">🍓 little kitchen</p><h1>Recipe Finder <span className="sparkle">✦</span></h1><p className="subtitle">Find something delicious for today.</p></div><div className="top-actions"><button className={`secondary-button ${onlyFavorites ? 'active' : ''}`} onClick={() => setOnlyFavorites(!onlyFavorites)}>💗 Favorites ({favorites.length})</button><button className="primary-button" onClick={() => { setEditing(null); setForm(blank); }}>＋ New recipe</button></div></header>
+    <section className="controls panel"><div className="search-box"><label htmlFor="search">What are you craving? 🔎</label><div className="search-row"><input id="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Try tacos, garlic, pasta..." /><button className="google-button" disabled={!search.trim()} onClick={() => google(search)}>Search Google ✨</button></div></div><div className="cuisine-pills"><span>Popular:</span>{cuisines.map((item) => <button key={item} className={cuisine === item ? 'cuisine-pill selected' : 'cuisine-pill'} onClick={() => setCuisine(cuisine === item ? '' : item)}>{item}</button>)}</div><div className="filters-grid"><select value={category} onChange={(e) => setCategory(e.target.value)}><option value="">🍽 Category</option>{(filters.categories || []).map((x) => <option key={x}>{x}</option>)}</select><select value={cuisine} onChange={(e) => setCuisine(e.target.value)}><option value="">🌍 Cuisine</option>{[...new Set([...(filters.cuisines || []), ...cuisines])].sort().map((x) => <option key={x}>{x}</option>)}</select><select value={mealType} onChange={(e) => setMealType(e.target.value)}><option value="">☀️ Meal type</option>{(filters.mealTypes || []).map((x) => <option key={x}>{x}</option>)}</select><select value={dietary} onChange={(e) => setDietary(e.target.value)}><option value="">🌱 Dietary</option>{(filters.dietaryTags || []).map((x) => <option key={x}>{x}</option>)}</select><button className="secondary-button" onClick={reset}>Clear filters</button></div></section>
+    <main className="content-grid"><section className="recipes-panel"><div className="section-head"><div><h2>{onlyFavorites ? '💗 Your favorites' : 'Fresh from the kitchen'}</h2><p className="hint">Tap a card for the full recipe and step-by-step instructions.</p></div><span className="result-count">{visible.length} tasty find{visible.length === 1 ? '' : 's'}</span></div>{loading ? <p>Mixing up your recipes...</p> : !visible.length ? <p className="empty-state">No recipes here yet. Try another flavor! 🍪</p> : <div className="recipe-grid">{visible.map((recipe) => <article className="recipe-card" key={recipe.id} tabIndex="0" onClick={() => setSelected(recipe)} onKeyDown={(e) => e.key === 'Enter' && setSelected(recipe)}><div className="image-wrap"><img src={recipe.imageUrl || fallbackImage} alt={recipe.name} /><button className={`heart-button ${favorites.includes(Number(recipe.id)) ? 'saved' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}>{favorites.includes(Number(recipe.id)) ? '♥' : '♡'}</button></div><div className="recipe-body"><div className="chip-row"><span className="chip">{recipe.category}</span><span className="chip">{recipe.cuisine}</span></div><h3>{recipe.name}</h3><p>{recipe.description}</p><p className="card-meta">⏱ {(Number(recipe.prepTime) || 0) + (Number(recipe.cookTime) || 0)} min · 👥 {recipe.servings || 2}</p><button className="view-link" onClick={(e) => { e.stopPropagation(); setSelected(recipe); }}>See the recipe →</button><div className="recipe-actions"><button className="small-button" onClick={(e) => { e.stopPropagation(); edit(recipe); }}>Edit</button><button className="small-button danger" onClick={(e) => { e.stopPropagation(); remove(recipe.id); }}>Delete</button></div></div></article>)}</div>}</section>
+    <aside className="form-panel panel"><h2>{editing ? '🧁 Edit recipe' : '🍰 Add a recipe'}</h2><form onSubmit={submit} className="recipe-form"><label>Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label><label>Description<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" /></label><label>Ingredients <small>separate with commas</small><textarea value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} rows="3" required /></label><label>Instructions <small>one step per line</small><textarea value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} rows="4" required /></label><div className="two-column"><label>Category<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Other'].map((x) => <option key={x}>{x}</option>)}</select></label><label>Cuisine<input value={form.cuisine} onChange={(e) => setForm({ ...form, cuisine: e.target.value })} placeholder="Italian" /></label></div><div className="two-column"><label>Meal type<select value={form.mealType} onChange={(e) => setForm({ ...form, mealType: e.target.value })}><option>breakfast</option><option>lunch</option><option>dinner</option><option>dessert</option></select></label><label>Dietary tags<input value={form.dietaryTags} onChange={(e) => setForm({ ...form, dietaryTags: e.target.value })} placeholder="vegan, gluten-free" /></label></div><div className="two-column"><label>Prep minutes<input type="number" min="0" value={form.prepTime} onChange={(e) => setForm({ ...form, prepTime: Number(e.target.value) })} /></label><label>Cook minutes<input type="number" min="0" value={form.cookTime} onChange={(e) => setForm({ ...form, cookTime: Number(e.target.value) })} /></label></div><label>Image URL<input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} /></label><div className="form-actions"><button className="primary-button">{editing ? 'Save recipe 💛' : 'Add recipe ✨'}</button>{editing && <button type="button" className="secondary-button" onClick={() => { setEditing(null); setForm(blank); }}>Cancel</button>}</div></form></aside></main>
+    {selected && <div className="modal-backdrop" onClick={() => setSelected(null)}><article className="recipe-modal" onClick={(e) => e.stopPropagation()}><button className="close-button" onClick={() => setSelected(null)}>×</button><img className="modal-image" src={selected.imageUrl || fallbackImage} alt={selected.name} /><div className="modal-content"><div className="chip-row"><span className="chip">{selected.category}</span><span className="chip">{selected.cuisine}</span></div><h2>{selected.name}</h2><p>{selected.description}</p><div className="recipe-stats"><span>⏱ Prep {selected.prepTime || 0}m</span><span>🍳 Cook {selected.cookTime || 0}m</span><span>👥 Serves {selected.servings || 2}</span></div><h3>🛒 Ingredients</h3><ul className="detail-list">{selected.ingredients.map((x, i) => <li key={i}>{x}</li>)}</ul><h3>👩‍🍳 Instructions</h3><ol className="instructions-list">{selected.instructions.map((x, i) => <li key={i}>{x}</li>)}</ol><div className="modal-actions"><button className="google-button" onClick={() => google(`${selected.name} ${selected.cuisine}`)}>Find this recipe on Google 🔎</button><button className="small-button favorite" onClick={() => toggleFavorite(selected.id)}>💗 {favorites.includes(Number(selected.id)) ? 'Saved' : 'Save favorite'}</button></div></div></article></div>}
+  </div>;
 }
-
 export default App;
