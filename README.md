@@ -2,14 +2,21 @@
 
 A cute full-stack recipe discovery app built with React, Express, and PostgreSQL support.
 
-## Recipe discovery
+## New recipes
 
-- Filter by cuisine, category, meal type, dietary tags, and search text.
-- Popular cuisine buttons include Indian, Italian, Mexican, Asian, Mediterranean, American, Greek, French, Thai, and Japanese.
-- Click a recipe card to see its full ingredients and step-by-step instructions.
-- Use **Search Google** or **Find this recipe on Google** to open live Google recipe results in a new tab.
-- The app creates a Google Search link instead of scraping Google. Google does not allow arbitrary apps to embed its result page directly.
-- Save favorites, create recipes, edit recipes, and delete recipes.
+The local starter catalog now includes cheesecake, parfait, French onion soup, pizza bowl, and rainbow veggie tacos in addition to the original recipes.
+
+## Free recommendations
+
+The app includes a free local recommendation helper. Enter ingredients and optionally select a cuisine or dietary preference. It scores recipes already in the local catalog and returns matching suggestions. This is intentionally not an LLM, so it requires no API key, has no usage fees, and works offline once the app is running.
+
+Endpoints:
+
+- `GET /api/recommendations?ingredients=rice,garlic&cuisine=Indian&dietary=vegan`
+- `GET /api/recipes`
+- `GET /api/filters`
+
+The Google button opens a live Google recipe search in a new tab. The app does not scrape Google or embed Google results. A real AI chat assistant would require a model provider or a locally installed model; the current helper is a free deterministic alternative.
 
 ## Run on Windows
 
@@ -21,7 +28,3 @@ npm run dev
 ```
 
 Open http://localhost:5173.
-
-## Google results
-
-The app opens searches such as `https://www.google.com/search?q=Italian+pasta+recipe`. To use Google's structured recipe data inside the app instead, configure an approved Google Programmable Search/API integration and keep its credentials on the server; do not scrape Google from the browser.

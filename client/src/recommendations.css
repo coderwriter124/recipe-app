@@ -1,0 +1,8 @@
+.recommendation-card { padding: 22px; margin-bottom: 25px; background: linear-gradient(135deg, #fff4c9, #ffe8f1); }
+.chat-row { display: grid; grid-template-columns: minmax(180px, 1fr) 160px 160px auto; gap: 10px; margin-top: 16px; }
+.recommendation-card input, .recommendation-card select { border: 2px solid #f1d5e0; border-radius: 14px; padding: .76rem .9rem; background: #fffafd; color: #493b48; }
+.helper-message { margin: 15px 0 0; color: #805b70; font-weight: 800; }
+.recommendation-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.recommendation-item { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px 15px; border: 2px solid #f0bfd1; border-radius: 15px; background: #fff; color: #614d5c; text-align: left; }
+.recommendation-item:hover { transform: translateY(-2px); box-shadow: 0 8px 18px #b45d7c2b; }
+@media (max-width: 900px) { .chat-row { grid-template-columns: 1fr; } }
