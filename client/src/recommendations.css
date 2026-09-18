@@ -1,8 +1,55 @@
-.recommendation-card { padding: 22px; margin-bottom: 25px; background: linear-gradient(135deg, #fff4c9, #ffe8f1); }
-.chat-row { display: grid; grid-template-columns: minmax(180px, 1fr) 160px 160px auto; gap: 10px; margin-top: 16px; }
-.recommendation-card input, .recommendation-card select { border: 2px solid #f1d5e0; border-radius: 14px; padding: .76rem .9rem; background: #fffafd; color: #493b48; }
-.helper-message { margin: 15px 0 0; color: #805b70; font-weight: 800; }
-.recommendation-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-.recommendation-item { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px 15px; border: 2px solid #f0bfd1; border-radius: 15px; background: #fff; color: #614d5c; text-align: left; }
-.recommendation-item:hover { transform: translateY(-2px); box-shadow: 0 8px 18px #b45d7c2b; }
-@media (max-width: 900px) { .chat-row { grid-template-columns: 1fr; } }
+.recommendation-card {
+  position: fixed;
+  z-index: 5;
+  top: 132px;
+  right: max(24px, calc((100vw - 1320px) / 2));
+  width: min(342px, calc(100vw - 40px));
+  padding: 20px;
+  margin: 0;
+  background: linear-gradient(160deg, #fffdf0 0%, #fff0f7 100%);
+  border: 2px solid #f4cddd;
+  box-shadow: 0 20px 55px rgba(177, 91, 128, .2);
+}
+
+.assistant-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.assistant-heading h2 { margin: 0; color: #5a4154; font-size: 1.2rem; }
+.assistant-heading .eyebrow { margin: 0 0 2px; font-size: 10px; }
+.assistant-avatar { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 15px; background: linear-gradient(135deg, #f58faf, #f5c96a); font-size: 1.45rem; box-shadow: 0 6px 15px rgba(204, 103, 139, .25); }
+.online-dot { color: #72a779; font-size: .72rem; font-weight: 800; }
+
+.chat-history { display: flex; flex-direction: column; gap: 8px; max-height: 184px; overflow: auto; padding: 3px; margin-bottom: 12px; }
+.chat-bubble { max-width: 92%; padding: 10px 12px; border-radius: 15px; color: #685364; font-size: .82rem; line-height: 1.4; }
+.chat-bubble.assistant { align-self: flex-start; background: #fff; border: 1px solid #f2d4e1; border-bottom-left-radius: 5px; }
+.chat-bubble.user { align-self: flex-end; background: #f58faf; color: white; border-bottom-right-radius: 5px; }
+.chat-bubble.typing { color: #bd5c84; font-style: italic; }
+.chat-bubble.typing span { letter-spacing: 2px; }
+
+.prompt-list { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 11px; }
+.prompt-chip { padding: 6px 9px; border: 1px solid #f2c4d5; border-radius: 999px; background: #fff8fb; color: #bd5c84; font-size: .68rem; font-weight: 800; }
+.prompt-chip:hover { background: #ffe3ee; }
+.assistant-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 8px; }
+.assistant-options select { min-width: 0; padding: 8px; border: 1px solid #f1d5e0; border-radius: 10px; background: white; color: #805b70; font-size: .75rem; }
+.assistant-input { display: flex; gap: 7px; }
+.assistant-input input { min-width: 0; width: 100%; padding: 10px 11px; border: 2px solid #f1d5e0; border-radius: 12px; background: #fff; color: #493b48; outline: none; font-size: .82rem; }
+.assistant-input input:focus { border-color: #ef9db9; box-shadow: 0 0 0 3px #ffe9f1; }
+.send-button { flex: 0 0 40px; border-radius: 12px; background: linear-gradient(135deg, #f58faf, #ec6d9b); color: white; font-size: 1.15rem; font-weight: 900; }
+.send-button:disabled { opacity: .5; cursor: not-allowed; }
+.recommendation-results { margin-top: 15px; padding-top: 13px; border-top: 1px dashed #efbfd1; }
+.results-label { margin: 0 0 8px; color: #b95179; font-size: .78rem; font-weight: 900; }
+.recommendation-list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.recommendation-item { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 11px; border: 1px solid #f0bfd1; border-radius: 12px; background: #fff; color: #614d5c; text-align: left; }
+.recommendation-item:hover { transform: translateX(2px); box-shadow: 0 7px 16px rgba(180, 93, 124, .15); }
+.recommendation-item span { font-size: .8rem; font-weight: 900; }
+.recommendation-item small { color: #a4778c; font-size: .68rem; }
+.assistant-note { margin: 13px 0 0; color: #b38b9d; font-size: .68rem; text-align: center; }
+
+/* Keep the main two-column layout clear of the fixed assistant on wide screens. */
+@media (min-width: 1100px) {
+  .app-shell { padding-right: 390px; }
+}
+@media (max-width: 1099px) {
+  .recommendation-card { position: relative; top: auto; right: auto; width: 100%; margin: 0 0 25px; }
+}
+@media (max-width: 520px) {
+  .assistant-options { grid-template-columns: 1fr; }
+}
